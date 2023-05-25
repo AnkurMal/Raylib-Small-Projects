@@ -1,6 +1,4 @@
 #include "raylib.h"
-#include <stdlib.h>
-#include <time.h>
 #define FLAPPY_BLUE (Color){51, 165, 255, 255}
 
 Rectangle get_rect(int x, int y, Texture2D sprite)
@@ -10,7 +8,7 @@ Rectangle get_rect(int x, int y, Texture2D sprite)
 
 void pipe_func(Rectangle *pipeup, Rectangle *pipedown, int x)
 {
-    int y_cord = -((rand()%(630-290+1))+250);
+    int y_cord = GetRandomValue(-630, -250);
     y_cord -= (*pipeup).y;
     (*pipeup).y += y_cord;
     (*pipedown).y += y_cord;
@@ -23,7 +21,6 @@ int main()
     int score = 0, highest_score = 0;
     float bird_grvity = 0.0f;
     bool game_active = true;
-    srand(time(0));
     
     const int screenWidth = 550;
     const int screenHeight = 800;
@@ -137,6 +134,7 @@ int main()
     UnloadTexture(flappy);
     UnloadTexture(pipe);
     UnloadTexture(surface);
+    
     CloseAudioDevice();
     CloseWindow();
     
