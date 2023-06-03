@@ -1,4 +1,4 @@
-//still in devlopment, not recommended to use
+//still in development, not recommended to use
 #include "raylib.h"
 
 #define TILE_SIZE 50
