@@ -9,11 +9,11 @@ Rectangle get_rect(int x, int y, Texture2D sprite)
 void pipe_func(Rectangle *pipeup, Rectangle *pipedown, int x)
 {
     int y_cord = GetRandomValue(-630, -250);
-    y_cord -= (*pipeup).y;
-    (*pipeup).y += y_cord;
-    (*pipedown).y += y_cord;
-    (*pipeup).x = x;
-    (*pipedown).x = x;   
+    y_cord -= pipeup->y;
+    pipeup->y += y_cord;
+    pipedown->y += y_cord;
+    pipeup->x = x;
+    pipedown->x = x;   
 }
 
 int main()
