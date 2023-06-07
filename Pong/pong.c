@@ -67,7 +67,7 @@ int main(void)
             }
             else if(right_score==10)
             {
-                strncpy(game_over_text, "You Won!", 20);
+                strncpy(game_over_text, "Player Won!", 20);
                 game_active = false;
             }
             
@@ -90,7 +90,7 @@ int main(void)
         {
             BeginDrawing();
                 ClearBackground(BLACK);
-                DrawText(game_over_text, 200, 300, 80, WHITE);
+                DrawText(game_over_text, 240, 300, 80, WHITE);
                 DrawText("Press space to continue...", 270, 400, 35, WHITE);
             EndDrawing();
         }
@@ -137,12 +137,29 @@ void ball_movement(Rectangle *ball, Rectangle *right_pad, Rectangle *left_pad)
         reset_ball(ball);
     }
     
-    if(CheckCollisionRecs(*ball, *right_pad) || CheckCollisionRecs(*ball, *left_pad))
+    if(CheckCollisionRecs(*ball, *right_pad))
     {
         PlaySound(pad_hit);
         if(abs(ball_speed_x)<7)
             ball_speed_x = ball_speed_y = 7;
-        ball_speed_x *= -1;
+        if(abs(ball->x+ball->width-right_pad->x)<10)
+            ball_speed_x *= -1;
+        else if(abs(ball->y+ball->height-right_pad->y)<10 && ball_speed_y>0)
+            ball_speed_y *= -1;
+        else if(abs(ball->y-(right_pad->x+right_pad->height))<10 && ball_speed_y<0)
+            ball_speed_y *= -1;
+    }
+    else if(CheckCollisionRecs(*ball, *left_pad))
+    {
+        PlaySound(pad_hit);
+        if(abs(ball_speed_x)<7)
+            ball_speed_x = ball_speed_y = 7;
+        if(abs(ball->x-(left_pad->x+left_pad->width)<10))
+            ball_speed_x *= -1;
+        else if(abs(ball->y+ball->height-left_pad->y)<10 && ball_speed_y>0)
+            ball_speed_y *= -1;
+        else if(abs(ball->y-(left_pad->x+left_pad->height))<10 && ball_speed_y<0)
+            ball_speed_y *= -1;
     }
 }
 
@@ -152,5 +169,5 @@ void reset_ball(Rectangle *ball)
     ball->x = ScreenWidth/2;
     ball->y = ScreenHeight/2;
     ball_speed_x = 4;
-    ball_speed_y = 2;
+    ball_speed_y = GetRandomValue(-3, 3);
 }
