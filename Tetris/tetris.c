@@ -45,11 +45,12 @@ Vector2 block_list[7][5][4] = {
 
 Color color[] = {VIOLET, YELLOW, MAROON, LIME, SKYBLUE, GOLD, DARKBLUE};
 
-Vector2 tetramino[5][4];
-
-Vector2 tetramino_pos[200];
+Vector2 tetramino_pos[200], tetramino[5][4];
 int prev_color_index[200], block, block_counter = 0, score = 0, highest_score = 0;
 Vector2 size = {SIZE, SIZE};
+
+Sound drop, gameover, line, rotate;
+Music start_music;
 
 static void tetramino_block(void);
 static void update_pos(int x, int y);
@@ -57,10 +58,17 @@ static void block_aligned(void);
 
 int main(void)
 {
+    InitAudioDevice();
     InitWindow(ScreenWidth, ScreenHeight, "Tetris");
     
     Image icon = LoadImage("images/tetris_icon.png");
     SetWindowIcon(icon);
+    
+    start_music = LoadMusicStream("audio/start_music.wav");
+    drop = LoadSound("audio/drop.wav");
+    gameover = LoadSound("audio/gameover.wav");
+    line = LoadSound("audio/line.wav");
+    rotate = LoadSound("audio/rotate.wav");
 
     next_block = GetRandomValue(0, 4);
     next_tetramino_block_no = GetRandomValue(0, 6);
@@ -69,11 +77,14 @@ int main(void)
     SetTargetFPS(60);
     while(!WindowShouldClose())
     {
+        UpdateMusicStream(start_music);
         if(game_active)
         {
+            PauseMusicStream(start_music);
             if(IsKeyPressed(KEY_UP) && tetramino[block+1][0].x>=left_offset && 
                 tetramino[block+1][2].x<right_offset && tetramino[block][3].y<=(ScreenHeight-SIZE*2))
             {
+                PlaySound(rotate);
                 block++;
                 if(block>3)
                     block = 0;
@@ -132,8 +143,9 @@ int main(void)
             }
             BeginDrawing();
                 ClearBackground(BLACK);
-                if(!score)
+                if(!highest_score)
                 {
+                    PlayMusicStream(start_music);
                     DrawText("TETRIS", ScreenWidth/2-160, 300, 80, RED);
                     DrawText("Press space to play...", 140, 400, 40, WHITE);
                 }
@@ -148,7 +160,14 @@ int main(void)
         }
     }
     UnloadImage(icon);
+    UnloadMusicStream(start_music);
+    UnloadSound(drop);
+    UnloadSound(gameover);
+    UnloadSound(line);
+    UnloadSound(rotate);
+    
     CloseWindow();
+    CloseAudioDevice();
     
     return 0;
 }
@@ -185,7 +204,10 @@ void update_pos(int x, int y)
             {
                 y_check = true;
                 if(tetramino[block][1].y<0)
+                {
                     game_active = false;
+                    PlaySound(gameover);
+                }
             }
         }
     }
@@ -206,6 +228,7 @@ void update_pos(int x, int y)
     }
     else if(tetramino[block][3].y==(ScreenHeight-SIZE) || y_check)
     {
+        PlaySound(drop);
         int c = 0;
         for(int i=block_counter; i<(block_counter+4); i++)
         {
@@ -222,6 +245,7 @@ void update_pos(int x, int y)
 void block_aligned(void)
 {
     int array[20][2] = {0}, c = 0;
+    bool line_sound = false;
     
     for(int i=0; i<block_counter; i++)
         for(int j=0; j<20; j++)
@@ -253,7 +277,11 @@ void block_aligned(void)
                     tetramino_pos[i].y += SIZE;
             }
             score += SIZE*2;
+            line_sound = true;
         }
+    
+    if(line_sound)
+        PlaySound(line);
     
     while(c<block_counter)
     {
