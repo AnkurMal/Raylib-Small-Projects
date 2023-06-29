@@ -172,7 +172,7 @@ int main(void)
     return 0;
 }
 
-static void tetramino_block(void)
+void tetramino_block(void)
 {
     x_check_left = x_check_right = false;
     tetramino_block_no = next_tetramino_block_no;
