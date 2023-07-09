@@ -36,9 +36,9 @@ int main(void)
                 
                 if(snake_array[0].x==food_pos.x && snake_array[0].y==food_pos.y  && snake_length!=SNAKE_SIZE)
                 {
+                    snake_length++;
                     snake_array[snake_length].x = -SIZE;
                     snake_array[snake_length].y = -SIZE;
-                    snake_length++;
                     regenerate_food = true;
                 }
                 
