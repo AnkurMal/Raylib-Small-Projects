@@ -72,10 +72,6 @@ int main(void)
                     break;
                 }
             
-            if(snake_array[0].x<left_offset || snake_array[0].x>right_offset || snake_array[0].y<upper_offset
-               || snake_array[0].y>lower_offset)
-               game_active = false;
-            
             if(IsKeyPressed(KEY_DOWN) && !y_mov)
                 movement(0, SIZE);
             else if(IsKeyPressed(KEY_UP) && !y_mov)
@@ -85,35 +81,34 @@ int main(void)
             else if(IsKeyPressed(KEY_LEFT) && !x_mov)
                 movement(-SIZE, 0);
             
-            BeginDrawing();
-                ClearBackground(SAP_GREEN);
-                
-                for(int i=0; i<snake_length; i++)
-                    DrawRectangleV(snake_array[i], size, (i)? DARKGRAY:BLACK);
-                DrawRectangleV(food_pos, size, RED);
-                
-                for(int i=1; i<counter; i++)
-                {
-                    if(i*SIZE>upper_offset && i*SIZE<=lower_offset)
-                        DrawLine(left_offset, SIZE*i, right_offset+SIZE, SIZE*i, BLACK);
-                    if(i*SIZE>left_offset && i*SIZE<=right_offset)
-                        DrawLine(SIZE*i, upper_offset, SIZE*i, lower_offset+SIZE, BLACK);
-                }
-                DrawRectangleLinesEx((Rectangle){left_offset, upper_offset, right_offset, lower_offset}, 3, BLACK);
-                DrawText(TextFormat("Score: %d", snake_length-1), left_offset, 5, 30, BLACK);
-            EndDrawing();
+            if(snake_array[0].x<left_offset || snake_array[0].x>right_offset || snake_array[0].y<upper_offset
+               || snake_array[0].y>lower_offset)
+                game_active = false;
+            else
+            {
+                BeginDrawing();
+                    ClearBackground(SAP_GREEN);
+                    
+                    for(int i=0; i<snake_length; i++)
+                        DrawRectangleV(snake_array[i], size, (i)? DARKGRAY:BLACK);
+                    DrawRectangleV(food_pos, size, RED);
+                    
+                    for(int i=1; i<counter; i++)
+                    {
+                        if(i*SIZE>upper_offset && i*SIZE<=lower_offset)
+                            DrawLine(left_offset, SIZE*i, right_offset+SIZE, SIZE*i, BLACK);
+                        if(i*SIZE>left_offset && i*SIZE<=right_offset)
+                            DrawLine(SIZE*i, upper_offset, SIZE*i, lower_offset+SIZE, BLACK);
+                    }
+                    DrawRectangleLinesEx((Rectangle){left_offset, upper_offset, right_offset, lower_offset}, 3, BLACK);
+                    DrawText(TextFormat("Score: %d", snake_length-1), left_offset, 5, 30, BLACK);
+                EndDrawing();
+            }
         }
         else
         {
             if(snake_length-1>highest_score)
                 highest_score = snake_length-1;
-            if(IsKeyPressed(KEY_SPACE))
-            {
-                x_mov = y_mov = 0;
-                snake_length = 1;
-                initSnakeAndFoodPos();
-                game_active = true;
-            }
             
             BeginDrawing();
                 ClearBackground(SAP_GREEN);
@@ -133,6 +128,14 @@ int main(void)
                     DrawText("Press space to continue...", 220, 500, 40, VIOLET);
                 }
             EndDrawing();
+            
+            if(IsKeyPressed(KEY_SPACE))
+            {
+                x_mov = y_mov = 0;
+                snake_length = 1;
+                initSnakeAndFoodPos();
+                game_active = true;
+            }
         }
     }
     CloseWindow();
