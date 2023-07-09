@@ -115,10 +115,8 @@ int main(void)
                     DrawRectangle(block_list[next_tetramino_block_no][next_block][i].x+SIZE*9,
                                   block_list[next_tetramino_block_no][next_block][i].y+SIZE*6, SIZE, SIZE, color[next_tetramino_block_no]);
                 }
-                
                 for(int i=0; i<block_counter; i++)
                     DrawRectangleV(tetramino_pos[i], size, color[prev_color_index[i]]);
-                
                 for(int i=0; i<counter; i++)
                 {
                     DrawLine(0, i*SIZE, ScreenWidth, i*SIZE, BLACK);
@@ -135,12 +133,7 @@ int main(void)
         {
             if(highest_score<score)
                 highest_score = score;
-            if(IsKeyPressed(KEY_SPACE))
-            {
-                frame_counter = block_counter = score = 0;
-                x_check_left = x_check_right = false;
-                game_active = true;
-            }
+            
             BeginDrawing();
                 ClearBackground(BLACK);
                 if(!highest_score)
@@ -157,6 +150,13 @@ int main(void)
                     DrawText("Press space to continue...", 80, 530, 40, GREEN);
                 }
             EndDrawing();
+            
+            if(IsKeyPressed(KEY_SPACE))
+            {
+                frame_counter = block_counter = score = 0;
+                x_check_left = x_check_right = false;
+                game_active = true;
+            }
         }
     }
     UnloadImage(icon);
