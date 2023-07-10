@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include "raymath.h"
 
 #define SIZE 40
 #define SNAKE_SIZE 330
@@ -34,7 +35,7 @@ int main(void)
                 bool regenerate_food = false;
                 frames_counter = 0;
                 
-                if(snake_array[0].x==food_pos.x && snake_array[0].y==food_pos.y  && snake_length!=SNAKE_SIZE)
+                if(Vector2Equals(snake_array[0], food_pos)  && snake_length!=SNAKE_SIZE)
                 {
                     snake_length++;
                     snake_array[snake_length].x = -SIZE;
@@ -57,7 +58,7 @@ int main(void)
                     food_pos.y = GetRandomValue(upper_offset/SIZE, lower_offset/SIZE)*SIZE;
                     
                     for(int i=0; i<snake_length; i++)
-                        if(food_pos.x==snake_array[i].x && food_pos.y==snake_array[i].y)
+                        if(Vector2Equals(snake_array[i], food_pos))
                         {
                             regenerate_food = true;
                             break;
@@ -66,7 +67,7 @@ int main(void)
             }
             
             for(int i=1; i<snake_length; i++)
-                if(snake_array[i].x==snake_array[0].x && snake_array[i].y==snake_array[0].y)
+                if(Vector2Equals(snake_array[i], snake_array[0]))
                 {
                     game_active = false;
                     break;
