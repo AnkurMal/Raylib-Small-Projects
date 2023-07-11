@@ -99,9 +99,9 @@ int main(void)
                 BeginDrawing();
                     ClearBackground(SAP_GREEN);
                     
+                    DrawRectangleV(food_pos, size, RED);
                     for(int i=0; i<snake_length; i++)
                         DrawRectangleV(snake_array[i], size, (i)? DARKGRAY:BLACK);
-                    DrawRectangleV(food_pos, size, RED);
                     
                     for(int i=1; i<counter; i++)
                     {
