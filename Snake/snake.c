@@ -13,16 +13,23 @@ int x_mov = 0, y_mov = 0, frames_counter = 0, frame_rate = 8, snake_length = 1;
 int highest_score = 0;
 Vector2 snake_array[SNAKE_SIZE], size = {SIZE, SIZE}, food_pos = {0};
 
+Sound food, hit, move;
+
 void movement(int x_steps, int y_steps);
 void initSnakeAndFoodPos(void);
 
 int main(void)
 {    
+    InitAudioDevice();
     InitWindow(ScreenWidth, ScreenHeight, "Snake");
     
     Image icon = LoadImage("images/snake_icon.png");
     SetWindowIcon(icon);
     UnloadImage(icon);
+    
+    food = LoadSound("audio/food.mp3");
+    hit = LoadSound("audio/hit.mp3");
+    move = LoadSound("audio/move.mp3");
     
     SetTargetFPS(60);
     while(!WindowShouldClose())
@@ -37,6 +44,7 @@ int main(void)
                 
                 if(Vector2Equals(snake_array[0], food_pos)  && snake_length!=SNAKE_SIZE)
                 {
+                    PlaySound(food);
                     snake_length++;
                     snake_array[snake_length].x = -SIZE;
                     snake_array[snake_length].y = -SIZE;
@@ -65,14 +73,7 @@ int main(void)
                         }
                 }
             }
-            
-            for(int i=1; i<snake_length; i++)
-                if(Vector2Equals(snake_array[i], snake_array[0]))
-                {
-                    game_active = false;
-                    break;
-                }
-            
+           
             if(IsKeyPressed(KEY_DOWN) && !y_mov)
                 movement(0, SIZE);
             else if(IsKeyPressed(KEY_UP) && !y_mov)
@@ -82,10 +83,18 @@ int main(void)
             else if(IsKeyPressed(KEY_LEFT) && !x_mov)
                 movement(-SIZE, 0);
             
+            for(int i=1; i<snake_length; i++)
+                if(Vector2Equals(snake_array[i], snake_array[0]))
+                {
+                    game_active = false;
+                    break;
+                }
+            
             if(snake_array[0].x<left_offset || snake_array[0].x>right_offset || snake_array[0].y<upper_offset
                || snake_array[0].y>lower_offset)
                 game_active = false;
-            else
+            
+            if(game_active)
             {
                 BeginDrawing();
                     ClearBackground(SAP_GREEN);
@@ -105,6 +114,8 @@ int main(void)
                     DrawText(TextFormat("Score: %d", snake_length-1), left_offset, 5, 30, BLACK);
                 EndDrawing();
             }
+            else
+                PlaySound(hit);
         }
         else
         {
@@ -139,6 +150,11 @@ int main(void)
             }
         }
     }
+    UnloadSound(food);
+    UnloadSound(hit);
+    UnloadSound(move);
+    
+    CloseAudioDevice();
     CloseWindow();
     
     return 0;
@@ -146,6 +162,7 @@ int main(void)
 
 void movement(int x_steps, int y_steps)
 {   
+    PlaySound(move);
     x_mov = x_steps;
     y_mov = y_steps;
 }
