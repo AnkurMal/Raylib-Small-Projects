@@ -1,7 +1,6 @@
 //sounds are taken from <http://web.archive.org/web/20180309023632/http://cs.au.dk/~dsound/DigitalAudio.dir/Greenfoot/Pong.dir/Pong.html>
 #include "raylib.h"
 #include <stdlib.h>
-#include <string.h>
 
 const int ScreenWidth = 1000;
 const int ScreenHeight = 800;
@@ -9,7 +8,7 @@ const int ScreenHeight = 800;
 Sound pad_hit, wall_hit, score;
 
 int ball_speed_x = 4, ball_speed_y = 2, left_pad_speed = 7;
-int left_score = 0, right_score = 0;
+int left_score = 0, right_score = 10;
 bool game_active = true;
 char game_over_text[20];
 
@@ -62,12 +61,12 @@ int main(void)
             
             if(left_score==10)
             {
-                strncpy(game_over_text, "Computer Won!", 20);
+                TextCopy(game_over_text, "Computer Won!");
                 game_active = false;
             }
             else if(right_score==10)
             {
-                strncpy(game_over_text, "Player Won!", 20);
+                TextCopy(game_over_text, "Player Won!");
                 game_active = false;
             }
             
