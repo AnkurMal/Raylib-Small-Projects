@@ -4,71 +4,61 @@
 #define COLUMN 20
 #define ROW 16
 
-Texture2D sky, grass, sun, dirt, player;
-Vector2 grass_info[(COLUMN*ROW)/5] = {0};
-int currentFrame = 0, framesCounter = 0, framesSpeed = 10, double_jump = 0, gravity = 0, grass_block_counter = 0;
+Texture2D sky, grass, sun, dirt, player, coin;
+Sound jump;
+
+int currentFrame = 0, framesCounter = 0, framesSpeed = 10;
+int dx, double_jump = 0, gravity = 0;
+
+//world map to draw
+int world_data[ROW][COLUMN] = {
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},              // 0 FOR AIR
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},              // 1 FOR DIRT                
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0},              // 2 FOR GRASS        
+                                {0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},                                             
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0}, 
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0}, 
+                                {0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+                                {0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+                                {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0}, 
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0}, 
+                                {0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+                                {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}, 
+                                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+                            };
 
 static void player_movement(Rectangle *player_source_rect, Rectangle *player_dest_rect, int speed);
 static void pause_movement(Rectangle *player_source_rect);
-static void y_collision(Rectangle *player_dest_rect);
+static void check_collision(Rectangle *player_dest_rect);
 
 int main(void)
 {
     const int ScreenWidth = 1000;
     const int ScreenHeight = 800;
-    
-    //world map to draw
-    int world_data[][COLUMN] = {
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},              // 0 FOR AIR
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},              // 1 FOR DIRT                
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0},              // 2 FOR GRASS        
-                                    {0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},                                             
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0}, 
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0}, 
-                                    {0, 0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
-                                    {0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
-                                    {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 0}, 
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0, 0}, 
-                                    {0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
-                                    {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}, 
-                                    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-                                };
-
-    for(int i=0; i<ROW; i++)
-        for(int j=0; j<COLUMN; j++)
-        {
-            if(world_data[i][j]==2)
-            {
-                grass_info[grass_block_counter].x = j*TILE_SIZE;
-                grass_info[grass_block_counter].y = i*TILE_SIZE;
-                grass_block_counter++;
-            }
-        }
 
     InitAudioDevice();
     InitWindow(ScreenWidth, ScreenHeight, "game");
     
     sky = LoadTexture("images/sky.png");
     sun = LoadTexture("images/sun.png");
-    
     dirt = LoadTexture("images/dirt.png");  
-    
     grass = LoadTexture("images/grass.png");
-    Rectangle grass_source_rect = {0, 0, grass.width, grass.height};
-    Rectangle grass_dest_rect = {0, 0, grass.width, grass.height};
+    coin = LoadTexture("images/coin.png");
     
     player = LoadTexture("images/scarfy.png");
     Rectangle player_source_rect = {((float)player.width/6)*2, 0.0f, (float)player.width/6, (float)player.height};
     Rectangle player_dest_rect = {50.0f, (ROW-3)*TILE_SIZE, TILE_SIZE, TILE_SIZE};
     
-    Sound jump = LoadSound("audio/jump.mp3");
+    jump = LoadSound("audio/jump.mp3");
     
     SetTargetFPS(60);
     while(!WindowShouldClose())
     {
+        dx = 0;
+
         //movement of player (left or right)
         if(IsKeyDown(KEY_RIGHT) && (player_dest_rect.x + player_dest_rect.width)<=ScreenWidth)
         {
@@ -96,26 +86,22 @@ int main(void)
             pause_movement(&player_source_rect);
         }
 
-        y_collision(&player_dest_rect);
+        check_collision(&player_dest_rect);
         
         //drawing on the screen
         BeginDrawing();
             DrawTexture(sky, 0, 0, WHITE);
-            DrawTexture(sun, 100, 100, WHITE);
+            DrawTexture(sun, TILE_SIZE*2, TILE_SIZE*2, WHITE);
             for(int i=0;i<ROW;i++)
-            {
                 for(int j=0;j<COLUMN;j++)
                 {
                     if (world_data[i][j]==1)
                         DrawTexture(dirt, j*TILE_SIZE, i*TILE_SIZE, WHITE);
                     else if(world_data[i][j]==2)
-                    {
-                        grass_dest_rect.x = j*TILE_SIZE;
-                        grass_dest_rect.y = i*TILE_SIZE;
-                        DrawTexturePro(grass, grass_source_rect, grass_dest_rect, (Vector2){0, 0}, 0, WHITE);
-                    }
+                        DrawTexture(grass, j*TILE_SIZE, i*TILE_SIZE, WHITE);
+                    else if(world_data[i][j]==3)
+                        DrawTexture(coin, j*TILE_SIZE, i*TILE_SIZE+10, WHITE);
                 }
-            }
             DrawTexturePro(player, player_source_rect, player_dest_rect, (Vector2){0, 0}, 0, WHITE);
             DrawFPS(10, 10);
         EndDrawing();
@@ -126,6 +112,7 @@ int main(void)
     UnloadTexture(sun);
     UnloadTexture(dirt);
     UnloadTexture(player);
+    UnloadTexture(coin);
     UnloadSound(jump);
     
     CloseAudioDevice();
@@ -146,14 +133,7 @@ void player_movement(Rectangle *player_source_rect, Rectangle *player_dest_rect,
             currentFrame = 0;
         player_source_rect->x = (float)currentFrame*(float)player.width/6;
     }
-    for(int i=0; i<grass_block_counter; i++)
-        //check for collision in x direction
-        if(CheckCollisionRecs(*player_dest_rect, (Rectangle){grass_info[i].x-speed, grass_info[i].y, TILE_SIZE, TILE_SIZE}))
-        {
-            speed = 0;
-            break;
-        }
-    player_dest_rect->x += speed;
+    dx = speed;
 }   
 
 //function for pausing animation
@@ -163,29 +143,45 @@ void pause_movement(Rectangle *player_source_rect)
     player_source_rect->x = (float)currentFrame*(float)player.width/6;
 }
 
-//check for collision in y direction
-void y_collision(Rectangle *player_dest_rect)
+//checks for collision of the player with the required blocks/elements
+void check_collision(Rectangle *player_dest_rect)
 {
     if(gravity<20)
         gravity++;
-    for(int i=0; i<grass_block_counter; i++)
-        if(CheckCollisionRecs(*player_dest_rect, (Rectangle){grass_info[i].x, grass_info[i].y-gravity, TILE_SIZE, TILE_SIZE}))
+
+    for(int i=0;i<ROW;i++)
+        for(int j=0;j<COLUMN;j++)
         {
-            //check if below the ground i.e. jumping
-            if(gravity<0)
+            if(world_data[i][j]==2)
             {
-                player_dest_rect->y = grass_info[i].y + TILE_SIZE;
-                gravity = 0;
+                //check for collision in y direction
+                if(CheckCollisionRecs(*player_dest_rect, (Rectangle){j*TILE_SIZE, i*TILE_SIZE-gravity, TILE_SIZE, TILE_SIZE}))
+                {
+                    //check if below the ground i.e. jumping
+                    if(gravity<0)
+                    {
+                        player_dest_rect->y = (i+1)*TILE_SIZE;
+                        gravity = 0;
+                    }
+                    //check if above the ground i.e. falling
+                    else if(gravity>=0)
+                    {
+                        player_dest_rect->y = (i-1)*TILE_SIZE;
+                        double_jump = 0;
+                        gravity = 0;
+                    }
+                }
+                //check for collision in x direction
+                if(CheckCollisionRecs(*player_dest_rect, (Rectangle){j*TILE_SIZE-dx, i*TILE_SIZE, TILE_SIZE, TILE_SIZE}))
+                    dx = 0;
             }
-            //check if above the ground i.e. falling
-            else if(gravity>=0)
-            {
-                player_dest_rect->y = grass_info[i].y - TILE_SIZE;
-                double_jump = 0;
-                gravity = 0;
-            }
-            break;
+            if(world_data[i][j]==3)
+                if(CheckCollisionRecs(*player_dest_rect, (Rectangle){j*TILE_SIZE, i*TILE_SIZE+10, coin.width, coin.height}))
+                {
+                    world_data[i][j]=0;
+                }
         }
+
     //check if player is above window (y<0)
     if(player_dest_rect->y<0)
     {
@@ -193,4 +189,5 @@ void y_collision(Rectangle *player_dest_rect)
         gravity = 0;
     }
     player_dest_rect->y += gravity;
+    player_dest_rect->x += dx;
 }
