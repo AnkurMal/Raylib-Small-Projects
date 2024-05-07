@@ -1,27 +1,42 @@
-#include "raylib.h"
-#include "raymath.h"
+#include <raylib.h>
+#include <rlgl.h>
+#include <raymath.h>
+#include <stdlib.h>
 
 #define SIZE 40
-#define SNAKE_SIZE 330
+#define FRAME_RATE 7
 #define SAP_GREEN (Color){149, 232, 78, 255}
 
-const int ScreenWidth = 960, ScreenHeight = 680, counter = ScreenWidth/SIZE;
-const int left_offset = SIZE, right_offset = ScreenWidth-SIZE*2, upper_offset = SIZE, lower_offset = ScreenHeight-SIZE*2;
-bool game_active = false;
+#define screenWidth 960
+#define screenHeight 680
+#define leftOffset SIZE
+#define upperOffset SIZE
 
-int x_mov = 0, y_mov = 0, frames_counter = 0, frame_rate = 8, snake_length = 1;
-int highest_score = 0;
-Vector2 snake_array[SNAKE_SIZE], size = {SIZE, SIZE}, food_pos = {0};
+#define defaultTexture(width, height) {rlGetTextureIdDefault(), width, height, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
 
+bool gameActive = false;
+
+const int rightOffset = screenWidth-SIZE*2, lowerOffset = screenHeight-SIZE*2;
+const int totalLenth = ((screenWidth-SIZE*2)*(screenHeight-SIZE*2))/(SIZE*SIZE);
+int xMov, yMov, framesCounter = 0, snakeLength, highestScore = 0;
+
+Vector2 *snakePos, foodPos = {0};
 Sound food, hit, move;
 
-void movement(int x_steps, int y_steps);
+void movement(int xSteps, int ySteps);
 void initSnakeAndFoodPos(void);
+void regenerateFood(void);
 
 int main(void)
 {    
+    SetTraceLogLevel(LOG_NONE);
     InitAudioDevice();
-    InitWindow(ScreenWidth, ScreenHeight, "Snake");
+    InitWindow(screenWidth, screenHeight, "Snake");
+    
+    snakePos = malloc(totalLenth*sizeof(Vector2)); 
+
+    Shader shader = LoadShader(0, "shader.fs");
+    Texture2D texture = defaultTexture(SIZE, SIZE);
     
     Image icon = LoadImage("images/snake_icon.png");
     SetWindowIcon(icon);
@@ -34,84 +49,74 @@ int main(void)
     SetTargetFPS(60);
     while(!WindowShouldClose())
     {
-        if(game_active)
+        if(gameActive)
         {
-            frames_counter++;
-            if(frames_counter >= 60/frame_rate)
-            {
-                bool regenerate_food = false;
-                frames_counter = 0;
-                
-                if(Vector2Equals(snake_array[0], food_pos)  && snake_length!=SNAKE_SIZE)
-                {
-                    PlaySound(food);
-                    snake_length++;
-                    snake_array[snake_length].x = -SIZE;
-                    snake_array[snake_length].y = -SIZE;
-                    regenerate_food = true;
-                }
-                
-                for(int i=snake_length-1; i>=1; i--)
-                {
-                    snake_array[i].x = snake_array[i-1].x;
-                    snake_array[i].y = snake_array[i-1].y;
-                }
-                snake_array[0].x += x_mov;
-                snake_array[0].y += y_mov;
-                
-                while(regenerate_food)
-                {   
-                    regenerate_food = false;
-                    food_pos.x = GetRandomValue(left_offset/SIZE, right_offset/SIZE)*SIZE;
-                    food_pos.y = GetRandomValue(upper_offset/SIZE, lower_offset/SIZE)*SIZE;
-                    
-                    for(int i=0; i<snake_length; i++)
-                        if(Vector2Equals(snake_array[i], food_pos))
-                        {
-                            regenerate_food = true;
-                            break;
-                        }
-                }
-            }
-           
-            if(IsKeyPressed(KEY_DOWN) && !y_mov)
+            bool foodNeeded = false;
+
+            if(IsKeyPressed(KEY_DOWN) && !yMov)
                 movement(0, SIZE);
-            else if(IsKeyPressed(KEY_UP) && !y_mov)
+            else if(IsKeyPressed(KEY_UP) && !yMov)
                 movement(0, -SIZE);
-            else if(IsKeyPressed(KEY_RIGHT) && !x_mov)
+            else if(IsKeyPressed(KEY_RIGHT) && !xMov)
                 movement(SIZE, 0);
-            else if(IsKeyPressed(KEY_LEFT) && !x_mov)
+            else if(IsKeyPressed(KEY_LEFT) && !xMov)
                 movement(-SIZE, 0);
-            
-            for(int i=1; i<snake_length; i++)
-                if(Vector2Equals(snake_array[i], snake_array[0]))
+
+            if(Vector2Equals(snakePos[0], foodPos)  && snakeLength!=totalLenth)
+            {
+                PlaySound(food);
+                framesCounter = 60/FRAME_RATE;
+                foodNeeded = true;
+                ++snakeLength;
+            }
+
+            framesCounter++;
+            if(framesCounter >= 60/FRAME_RATE)
+            {
+                framesCounter = 0;
+                
+                for(int i=snakeLength-1; i>=1; i--)
                 {
-                    game_active = false;
+                    snakePos[i].x = snakePos[i-1].x;
+                    snakePos[i].y = snakePos[i-1].y;
+                }
+                snakePos[0].x += xMov;
+                snakePos[0].y += yMov;
+            }
+            if(foodNeeded) regenerateFood();
+            
+            for(int i=1; i<snakeLength; i++)
+                if(Vector2Equals(snakePos[i], snakePos[0]))
+                {
+                    gameActive = false;
                     break;
                 }
             
-            if(snake_array[0].x<left_offset || snake_array[0].x>right_offset || snake_array[0].y<upper_offset
-               || snake_array[0].y>lower_offset)
-                game_active = false;
+            if(snakePos[0].x<leftOffset || snakePos[0].x>rightOffset || snakePos[0].y<upperOffset
+               || snakePos[0].y>lowerOffset)
+                gameActive = false;
             
-            if(game_active)
+            if(gameActive)
             {
                 BeginDrawing();
                     ClearBackground(SAP_GREEN);
                     
-                    DrawRectangleV(food_pos, size, RED);
-                    for(int i=0; i<snake_length; i++)
-                        DrawRectangleV(snake_array[i], size, (i)? DARKGRAY:BLACK);
+                    DrawTextureV(texture, foodPos, RED);
+                    BeginShaderMode(shader);
+                        for(int i=0; i<snakeLength; i++)
+                            DrawTextureV(texture, snakePos[i], (i)? DARKGRAY:BLACK);
+                    EndShaderMode();
                     
+                    int counter = screenWidth/SIZE;
                     for(int i=1; i<counter; i++)
                     {
-                        if(i*SIZE>upper_offset && i*SIZE<=lower_offset)
-                            DrawLine(left_offset, SIZE*i, right_offset+SIZE, SIZE*i, BLACK);
-                        if(i*SIZE>left_offset && i*SIZE<=right_offset)
-                            DrawLine(SIZE*i, upper_offset, SIZE*i, lower_offset+SIZE, BLACK);
+                        if(i*SIZE>upperOffset && i*SIZE<=lowerOffset)
+                            DrawLine(leftOffset, SIZE*i, rightOffset+SIZE, SIZE*i, BLACK);
+                        if(i*SIZE>leftOffset && i*SIZE<=rightOffset)
+                            DrawLine(SIZE*i, upperOffset, SIZE*i, lowerOffset+SIZE, BLACK);
                     }
-                    DrawRectangleLinesEx((Rectangle){left_offset, upper_offset, right_offset, lower_offset}, 3, BLACK);
-                    DrawText(TextFormat("Score: %d", snake_length-1), left_offset, 5, 30, BLACK);
+                    DrawRectangleLinesEx((Rectangle){leftOffset, upperOffset, rightOffset, lowerOffset}, 3, BLACK);
+                    DrawText(TextFormat("Score: %d", snakeLength-1), leftOffset, 5, 30, BLACK);
                 EndDrawing();
             }
             else
@@ -119,40 +124,43 @@ int main(void)
         }
         else
         {
-            if(snake_length-1>highest_score)
-                highest_score = snake_length-1;
+            if(snakeLength-1>highestScore)
+                highestScore = snakeLength-1;
             
             BeginDrawing();
                 ClearBackground(SAP_GREEN);
-                if(!food_pos.x)
+                if(!foodPos.x)
                 {
                     DrawText("SNAKE GAME", 220, 220, 80, RED);
                     DrawText("Press space to play...", 270, 320, 40, VIOLET);
                 }
                 else
                 {
-                    if(snake_length!=SNAKE_SIZE)
+                    if(snakeLength!=totalLenth)
                         DrawText("GAME OVER!", 280, 150, 70, RED);
                     else
                         DrawText("YOU WON!", 280, 150, 70, RED);
-                    DrawText(TextFormat("Score: %d", snake_length-1), 280, 300, 50, BLACK);
-                    DrawText(TextFormat("Highest Score: %d", highest_score), 280, 370, 50, BLACK);
+                    DrawText(TextFormat("Score: %d", snakeLength-1), 280, 300, 50, BLACK);
+                    DrawText(TextFormat("Highest Score: %d", highestScore), 280, 370, 50, BLACK);
                     DrawText("Press space to continue...", 220, 500, 40, VIOLET);
                 }
             EndDrawing();
             
             if(IsKeyPressed(KEY_SPACE))
             {
-                x_mov = y_mov = 0;
-                snake_length = 1;
+                xMov = yMov = 0;
+                snakeLength = 1;
                 initSnakeAndFoodPos();
-                game_active = true;
+                gameActive = true;
             }
         }
     }
+    free(snakePos);
     UnloadSound(food);
     UnloadSound(hit);
     UnloadSound(move);
+    UnloadTexture(texture);
+    UnloadShader(shader);
     
     CloseAudioDevice();
     CloseWindow();
@@ -160,18 +168,35 @@ int main(void)
     return 0;
 }
 
-void movement(int x_steps, int y_steps)
+void movement(int xSteps, int ySteps)
 {   
     PlaySound(move);
-    x_mov = x_steps;
-    y_mov = y_steps;
+    xMov = xSteps;
+    yMov = ySteps;
+}
+
+void regenerateFood(void)
+{
+    bool foodNotGenerated = true;
+    while(foodNotGenerated)
+    {   
+        foodNotGenerated = false;
+        foodPos.x = GetRandomValue(leftOffset/SIZE, rightOffset/SIZE)*SIZE;
+        foodPos.y = GetRandomValue(upperOffset/SIZE, lowerOffset/SIZE)*SIZE;
+        
+        for(int i=0; i<snakeLength; i++)
+            if(Vector2Equals(snakePos[i], foodPos))
+            {
+                foodNotGenerated = true;
+                break;
+            }
+    }
 }
 
 void initSnakeAndFoodPos(void)
 {
-    snake_array[0].x = GetRandomValue(left_offset/SIZE, 11)*SIZE;
-    snake_array[0].y = GetRandomValue(upper_offset/SIZE, lower_offset/SIZE)*SIZE;
+    snakePos[0].x = GetRandomValue(leftOffset/SIZE, rightOffset/SIZE)*SIZE;
+    snakePos[0].y = GetRandomValue(upperOffset/SIZE, lowerOffset/SIZE)*SIZE;
     
-    food_pos.x = GetRandomValue(13, right_offset/SIZE)*SIZE;
-    food_pos.y = GetRandomValue(upper_offset/SIZE, lower_offset/SIZE)*SIZE;
+    regenerateFood();
 }
