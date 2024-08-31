@@ -8,7 +8,7 @@ const int ScreenHeight = 800;
 Sound pad_hit, wall_hit, score;
 
 int ball_speed_x = 4, ball_speed_y = 2, left_pad_speed = 7;
-int left_score = 0, right_score = 10;
+int left_score = 0, right_score = 0;
 bool game_active = true;
 char game_over_text[20];
 
